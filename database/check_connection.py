@@ -1,0 +1,64 @@
+"""Check MySQL settings and verify that the Smart Attendance schema is present."""
+
+import os
+import sys
+
+
+def main():
+    try:
+        import mysql.connector
+        from mysql.connector import Error
+    except ImportError as exc:
+        raise SystemExit(
+            "MySQL Connector/Python is not installed. Run: "
+            'python -m pip install "mysql-connector-python==9.5.0"'
+        ) from exc
+
+    host = os.environ.get("ATTENDANCE_DB_HOST", "127.0.0.1")
+    user = os.environ.get("ATTENDANCE_DB_USER")
+    password = os.environ.get("ATTENDANCE_DB_PASSWORD")
+    database = os.environ.get("ATTENDANCE_DB_NAME", "smart_attendance")
+    raw_port = os.environ.get("ATTENDANCE_DB_PORT", "3306")
+    if not user or password is None:
+        raise SystemExit(
+            "Set ATTENDANCE_DB_USER and ATTENDANCE_DB_PASSWORD in the current "
+            "PowerShell session. Credentials are read from environment variables, not source files."
+        )
+    try:
+        port = int(raw_port)
+    except ValueError:
+        raise SystemExit("ATTENDANCE_DB_PORT must be an integer.")
+
+    connection = None
+    try:
+        connection = mysql.connector.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
+            connection_timeout=5,
+        )
+        cursor = connection.cursor()
+        cursor.execute("SELECT VERSION()")
+        server_version = cursor.fetchone()[0]
+        cursor.execute("SELECT MAX(version_id) FROM schema_version")
+        version = cursor.fetchone()[0]
+        cursor.close()
+        print(f"Connected to MySQL {server_version} at {host}:{port}/{database}")
+        print(f"Attendance schema version: {version if version is not None else 'not recorded'}")
+        if version != 1:
+            print("Expected schema version 1. Run database/schema.sql before importing attendance data.")
+            return 1
+        print("Smart Attendance schema is ready for the one-time import.")
+        return 0
+    except Error as exc:
+        print(f"MySQL check failed: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        if connection is not None and connection.is_connected():
+            connection.close()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

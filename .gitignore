@@ -1,0 +1,15 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Local configuration and generated test output
+.env
+phase1_test.png
+
+# Biometric data, attendance records, and generated reports
+dataset/
+recognition/face_embeddings.npz
+attendance.csv
+reports/
