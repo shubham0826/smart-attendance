@@ -1,0 +1,14 @@
+{
+  "exam_id": "EXAM-REPLACE-ME",
+  "frame": {
+    "width": 1920,
+    "height": 1080
+  },
+  "observations": [
+    {
+      "bbox": [420, 260, 510, 370],
+      "identity_status": "unknown",
+      "student_id": null
+    }
+  ]
+}

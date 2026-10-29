@@ -61,3 +61,29 @@ in this image. It does not mean the seat is empty, the assigned person is
 absent, or a rule was violated. A wide classroom camera may not show faces well
 enough for this method; a calibrated room image and person-detection approach
 are still needed before this can support an exam workflow.
+
+## Compare identity observations with a plan
+
+`compare_observations.py` defines the input contract for a later identity
+provider. Start from `templates/observations.template.json` and replace its
+example exam ID, frame dimensions, and bounding boxes. Each observation must
+set `identity_status` to `recognized`, `unknown`, or `uncertain`. Only a
+`recognized` observation may contain `student_id`; the other statuses must use
+`null`. The file format does not decide whether a model's match is reliable.
+
+Run the comparison:
+
+```powershell
+.\.venv\Scripts\python.exe .\exam\compare_observations.py `
+  --plan .\exam\seat_plan.local.json `
+  --observations .\exam\identity_observations.local.json `
+  --output .\reports\exam\review.json
+```
+
+Every seat result requires teacher review. Matching IDs are only candidates for
+review; different IDs are possible mismatches for review; missing, unknown,
+duplicate, or overlapping observations remain uncertain. The tool does not
+write attendance, change a review status, or make a final seating decision.
+Observation files and detailed review reports may contain student IDs and must
+remain local. This is an input contract and comparison step; no face-recognition
+identity provider is connected to Exam Mode yet.

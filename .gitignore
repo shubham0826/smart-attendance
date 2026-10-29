@@ -18,3 +18,4 @@ reports/
 exam/plans/
 exam/seat_plan.local.json
 exam/seat_assignments.local.csv
+exam/identity_observations.local.json
