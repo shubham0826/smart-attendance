@@ -102,3 +102,35 @@ def record_check_in(student_id, attendance_date, check_in_time, detector_score=N
             writer.writerow(["date", "time", "student_id"])
         writer.writerow([attendance_date.isoformat(), check_in_time.strftime("%H:%M:%S"), student_id])
     return True
+
+
+def start_class_session(session_label, checkpoint_interval_minutes):
+    if backend() != "mysql":
+        raise RuntimeError("Periodic checkpoint storage currently requires ATTENDANCE_STORAGE=mysql.")
+    from database.mysql_repository import create_class_session
+
+    return create_class_session(session_label, checkpoint_interval_minutes)
+
+
+def finish_class_session(session_id, event_at):
+    if backend() != "mysql":
+        raise RuntimeError("Periodic checkpoint storage currently requires ATTENDANCE_STORAGE=mysql.")
+    from database.mysql_repository import end_class_session
+
+    return end_class_session(session_id, event_at)
+
+
+def save_checkpoint(session_id, student_ids, observed_ids, window_start_at, checkpoint_at):
+    if backend() != "mysql":
+        raise RuntimeError("Periodic checkpoint storage currently requires ATTENDANCE_STORAGE=mysql.")
+    from database.mysql_repository import record_checkpoint
+
+    return record_checkpoint(session_id, student_ids, observed_ids, window_start_at, checkpoint_at)
+
+
+def list_checkpoint_observations(session_id=None):
+    if backend() != "mysql":
+        raise RuntimeError("Periodic checkpoint storage currently requires ATTENDANCE_STORAGE=mysql.")
+    from database.mysql_repository import list_checkpoint_observations as mysql_list_checkpoints
+
+    return mysql_list_checkpoints(session_id)

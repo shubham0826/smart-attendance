@@ -102,7 +102,14 @@ python "C:\smart attendance\recognition\recognize.py"
 python "C:\smart attendance\recognition\attendance_report.py"
 python "C:\smart attendance\recognition\audit_attendance.py"
 python "C:\smart attendance\recognition\attendance_dashboard.py"
+python "C:\smart attendance\recognition\checkpoint_report.py"
 ```
+
+With MySQL selected, each recognition run creates a class session and stores a
+review-only checkpoint summary every 20 minutes. `checkpoint_report.py` exports
+the latest session's records; pass `--session-id ID` to select another session.
+Students not seen in a window are marked `not_observed` and remain pending human
+review. This status does not establish absence.
 
 The audit checks date/time fields, roster IDs, and duplicate daily check-ins.
 It leaves the source log untouched and writes any flagged rows to
@@ -171,8 +178,9 @@ remain. The current recognition code is a prototype; its matching threshold
 has not been validated, and it must not be treated as an authoritative
 attendance decision.
 MySQL is supported as an optional attendance backend for recognition, daily and
-period reports, and dashboard generation. CSV remains the default. Follow
-`database/README.md` to install the Python connector, configure a private `.env`,
-register the roster, and optionally migrate existing attendance rows. Periodic
-checkpoint policy and exam-seat verification remain future work. Face matching
-is still a prototype and needs independent validation before operational use.
+period reports, dashboard generation, and review-only 20-minute checkpoints.
+CSV remains the code default; the private local `.env` selects MySQL for this
+machine. Checkpoint detections do not decide absence; missing detections remain
+pending human review. See `database/README.md` for setup and reporting commands.
+The institutional checkpoint policy and exam-seat verification remain future
+work. Face matching is still a prototype and needs independent validation.

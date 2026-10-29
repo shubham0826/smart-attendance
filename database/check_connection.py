@@ -55,10 +55,10 @@ def main():
         cursor.close()
         print(f"Connected to MySQL {server_version} at {host}:{port}/{database}")
         print(f"Attendance schema version: {version if version is not None else 'not recorded'}")
-        if version != 1:
-            print("Expected schema version 1. Run database/schema.sql before importing attendance data.")
+        if version != 2:
+            print("Expected schema version 2. Run database/migrations/002_checkpoints.sql first.")
             return 1
-        print("Smart Attendance schema is ready for the one-time import.")
+        print("Smart Attendance schema is ready.")
         return 0
     except Error as exc:
         print(f"MySQL check failed: {exc}", file=sys.stderr)

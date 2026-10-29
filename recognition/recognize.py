@@ -1,6 +1,7 @@
 """Recognize registered students from a webcam and record daily attendance."""
 
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -59,9 +60,17 @@ def main():
         help="face detector to use (default: YuNet; HOG is the legacy fallback)",
     )
     parser.add_argument("--score-threshold", type=float, default=DEFAULT_SCORE_THRESHOLD)
+    parser.add_argument(
+        "--checkpoint-minutes",
+        type=int,
+        default=20,
+        help="minutes between review-only presence checkpoints (default: 20)",
+    )
     args = parser.parse_args()
     if not 0.0 <= args.score_threshold <= 1.0:
         parser.error("--score-threshold must be between 0 and 1")
+    if args.checkpoint_minutes < 1:
+        parser.error("--checkpoint-minutes must be at least 1")
 
     if not EMBEDDINGS_FILE.is_file() or EMBEDDINGS_FILE.stat().st_size == 0:
         raise SystemExit(
@@ -96,7 +105,24 @@ def main():
     else:
         print("Using legacy HOG detection on quarter-size frames.")
     print("Press q in the camera window to stop.")
+    session_id = None
+    checkpoint_roster = []
+    observed_since_checkpoint = set()
+    checkpoint_interval = args.checkpoint_minutes * 60
+    next_checkpoint = time.monotonic() + checkpoint_interval
+    checkpoint_window_start = datetime.now().replace(microsecond=0)
     try:
+        if backend == "mysql":
+            checkpoint_roster = attendance_store.list_students()
+            session_label = f"Recognition run {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            session_id = attendance_store.start_class_session(session_label, args.checkpoint_minutes)
+            print(
+                f"Class session {session_id} started. Review-only checkpoints every "
+                f"{args.checkpoint_minutes} minutes."
+            )
+        else:
+            print("Periodic checkpoints are available with ATTENDANCE_STORAGE=mysql.")
+
         while True:
             success, frame = camera.read()
             if not success:
@@ -127,6 +153,7 @@ def main():
 
                 if distance <= MATCH_THRESHOLD:
                     student_id = known_ids[best_index]
+                    observed_since_checkpoint.add(student_id)
                     record_attendance(student_id, today, attended, detector_score, distance)
                     label = f"{student_id} - Present"
                     color = (0, 180, 0)
@@ -141,12 +168,34 @@ def main():
                 cv2.rectangle(frame, (left, bottom - 30), (right, bottom), color, cv2.FILLED)
                 cv2.putText(frame, label, (left + 6, bottom - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
 
+            if session_id is not None and time.monotonic() >= next_checkpoint:
+                checkpoint_at = datetime.now().replace(microsecond=0)
+                stored = attendance_store.save_checkpoint(
+                    session_id,
+                    checkpoint_roster,
+                    observed_since_checkpoint,
+                    checkpoint_window_start,
+                    checkpoint_at,
+                )
+                print(
+                    f"Checkpoint saved for {len(checkpoint_roster)} students "
+                    f"({stored} new rows); not-observed results require review."
+                )
+                observed_since_checkpoint.clear()
+                checkpoint_window_start = checkpoint_at
+                next_checkpoint = time.monotonic() + checkpoint_interval
+
             cv2.imshow("Attendance Recognition", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
     finally:
         camera.release()
         cv2.destroyAllWindows()
+        if session_id is not None:
+            try:
+                attendance_store.finish_class_session(session_id, datetime.now().replace(microsecond=0))
+            except Exception as exc:
+                print(f"Could not record the session end event: {exc}")
         data.close()
 
 

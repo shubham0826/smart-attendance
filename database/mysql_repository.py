@@ -126,6 +126,101 @@ def import_attendance_csv(path):
         connection.close()
 
 
+def create_class_session(session_label, checkpoint_interval_minutes):
+    """Create an append-only class session and return its ID."""
+    if checkpoint_interval_minutes < 1:
+        raise ValueError("checkpoint_interval_minutes must be positive")
+    connection = connect_from_environment()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            "INSERT INTO class_sessions (session_label, checkpoint_interval_minutes) VALUES (%s, %s)",
+            (session_label, checkpoint_interval_minutes),
+        )
+        session_id = cursor.lastrowid
+        connection.commit()
+        return session_id
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def end_class_session(session_id, event_at):
+    """Append a session-ended event without rewriting session history."""
+    connection = connect_from_environment()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            "INSERT INTO class_session_events (session_id, event_type, event_at) VALUES (%s, 'ended', %s)",
+            (session_id, event_at),
+        )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def record_checkpoint(session_id, student_ids, observed_ids, window_start_at, checkpoint_at):
+    """Store observed and not-observed statuses, each awaiting human review."""
+    ids = sorted(set(student_ids))
+    if not ids:
+        return 0
+    observed = set(observed_ids)
+    rows = [
+        (
+            session_id,
+            student_id,
+            window_start_at,
+            checkpoint_at,
+            "observed" if student_id in observed else "not_observed",
+        )
+        for student_id in ids
+    ]
+    connection = connect_from_environment()
+    try:
+        cursor = connection.cursor()
+        cursor.executemany(
+            "INSERT IGNORE INTO checkpoint_observations "
+            "(session_id, student_id, window_start_at, checkpoint_at, observation_status) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            rows,
+        )
+        inserted = cursor.rowcount
+        connection.commit()
+        return inserted
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def list_checkpoint_observations(session_id=None):
+    """Read one session's checkpoint observations, defaulting to the latest session."""
+    connection = connect_from_environment()
+    try:
+        cursor = connection.cursor(dictionary=True)
+        if session_id is None:
+            cursor.execute("SELECT MAX(session_id) AS session_id FROM class_sessions")
+            latest = cursor.fetchone()["session_id"]
+            if latest is None:
+                return None, []
+            session_id = latest
+        cursor.execute(
+            "SELECT session_id, student_id, window_start_at, checkpoint_at, observation_status, review_status "
+            "FROM checkpoint_observations WHERE session_id = %s "
+            "ORDER BY checkpoint_at, student_id",
+            (session_id,),
+        )
+        return session_id, cursor.fetchall()
+    finally:
+        connection.close()
+
+
 def has_checked_in(student_id, attendance_date):
     """Check the current once-per-day attendance rule."""
     connection = connect_from_environment()

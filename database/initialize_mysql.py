@@ -28,8 +28,8 @@ def main():
         version = cursor.fetchone()[0]
     finally:
         connection.close()
-    if version != 1:
-        raise SystemExit("MySQL schema version 1 is missing. Run database/schema.sql first.")
+    if version != 2:
+        raise SystemExit("MySQL schema version 2 is missing. Run database/migrations/002_checkpoints.sql first.")
 
     roster = attendance_store.csv_roster()
     if not roster:
