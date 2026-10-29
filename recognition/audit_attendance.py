@@ -2,14 +2,19 @@
 
 import argparse
 import csv
+import sys
 from datetime import datetime
 from pathlib import Path
 
-
 PROJECT_DIR = Path(__file__).resolve().parent.parent
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+from database import attendance_store
+
+
 DEFAULT_LOG = PROJECT_DIR / "attendance.csv"
 DEFAULT_REPORT = PROJECT_DIR / "reports" / "attendance_audit.csv"
-ROSTER_DIR = PROJECT_DIR / "dataset"
 REQUIRED_COLUMNS = {"date", "time", "student_id"}
 
 
@@ -68,13 +73,41 @@ def audit(path, roster):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, default=DEFAULT_LOG, help="attendance CSV to inspect")
+    parser.add_argument("--input", type=Path, help="inspect this CSV instead of the configured backend")
     parser.add_argument("--output", type=Path, default=DEFAULT_REPORT, help="CSV file for rows with issues")
     parser.add_argument("--strict", action="store_true", help="return exit code 1 if any issues are found")
     args = parser.parse_args()
 
-    roster = {path.name for path in ROSTER_DIR.iterdir() if path.is_dir()} if ROSTER_DIR.is_dir() else set()
-    rows_read, issues = audit(args.input, roster)
+    roster = set(attendance_store.list_students(active_only=False))
+    if args.input or attendance_store.backend() == "csv":
+        rows_read, issues = audit(args.input or DEFAULT_LOG, roster)
+    else:
+        records = attendance_store.list_attendance()
+        rows_read = len(records)
+        issues = []
+        seen = set()
+        for row_number, row in enumerate(records, start=1):
+            student_id = row["student_id"]
+            attendance_date = row["attendance_date"].isoformat()
+            attendance_time = str(row["check_in_time"])
+            row_issues = []
+            if not student_id:
+                row_issues.append("missing_student_id")
+            elif student_id not in roster:
+                row_issues.append("student_not_in_roster")
+            key = (attendance_date, student_id)
+            if student_id and key in seen:
+                row_issues.append("duplicate_daily_check_in")
+            if student_id:
+                seen.add(key)
+            if row_issues:
+                issues.append({
+                    "line_number": row_number,
+                    "issues": ";".join(row_issues),
+                    "date": attendance_date,
+                    "time": attendance_time,
+                    "student_id": student_id,
+                })
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=["line_number", "issues", "date", "time", "student_id"])

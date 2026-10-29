@@ -1,69 +1,84 @@
-# MySQL storage foundation
+# MySQL setup and attendance storage
 
-`schema.sql` creates the first MySQL 8.0 schema for the prototype. Run it in
-MySQL Workbench or the MySQL command line only after a local MySQL server is
-installed and running. The project does not currently have a MySQL connection
-configured, and the application continues to use `attendance.csv`.
+Recognition, daily reports, period reports, and the offline dashboard can use
+either the existing CSV files or MySQL. CSV remains the default. The database
+stores student IDs and attendance records only; face images and embeddings stay
+local and are not stored in MySQL.
 
-After reviewing the CSV, generate a one-time SQL import file with:
+## 1. Prepare MySQL
 
-```powershell
-python "C:\smart attendance\database\export_mysql_import.py"
+Start the local MySQL Server service. In MySQL Workbench, open and run
+`schema.sql` as a MySQL administrator. It creates the `smart_attendance`
+database and its version 1 tables. Create a dedicated application login rather
+than using `root`; run the following after replacing the password with your own
+strong password:
+
+```sql
+CREATE USER IF NOT EXISTS 'smart_attendance_app'@'127.0.0.1'
+  IDENTIFIED BY 'replace_with_a_strong_password';
+GRANT SELECT, INSERT ON smart_attendance.*
+  TO 'smart_attendance_app'@'127.0.0.1';
 ```
 
-It validates dates, times, roster membership, and daily duplicates, then writes
-`reports/smart_attendance_import.sql`. The current source exports five student
-IDs and two attendance rows. In MySQL Workbench, run `schema.sql` first, then
-open and run the generated import file. It is a one-time import; do not run it
-again after it commits, because it intentionally uses ordinary inserts.
+The same project runs on the PC hosting MySQL. If MySQL is on another computer,
+configure its bind address, firewall, and a host-restricted MySQL account before
+using that server; do not expose port 3306 to the public internet.
 
-## Check the MySQL connection
+## 2. Install the Python connector and set local settings
 
-The optional connection checker uses MySQL Connector/Python 9.5.0, which
-supports this project's Python 3.13 environment. Install it with:
+From PowerShell:
 
 ```powershell
-python -m pip install "mysql-connector-python==9.5.0"
+cd "C:\smart attendance"
+.\.venv\Scripts\python.exe -m pip install "mysql-connector-python==9.5.0"
+Copy-Item .env.example .env
+notepad .env
 ```
 
-Set `ATTENDANCE_DB_HOST`, `ATTENDANCE_DB_PORT`, and `ATTENDANCE_DB_NAME` as
-needed. For a password prompt in PowerShell, use a temporary credential object
-in the current session:
+Set `ATTENDANCE_DB_PASSWORD` in `.env` to the password created above. Keep
+`.env` private; Git ignores it. The application reads process environment
+variables first and uses `.env` only for values not already set in the process.
+Set `ATTENDANCE_STORAGE=mysql` only after the schema and account are ready.
+
+## 3. Register the roster and optionally import existing attendance
+
+The initializer checks the schema and adds IDs from local `dataset` folders to
+the `students` table without changing existing names or active status:
 
 ```powershell
-$env:ATTENDANCE_DB_USER = "smart_attendance_app"
-$credential = Get-Credential -UserName $env:ATTENDANCE_DB_USER
-$env:ATTENDANCE_DB_PASSWORD = $credential.GetNetworkCredential().Password
-python "C:\smart attendance\database\check_connection.py"
-Remove-Item Env:ATTENDANCE_DB_PASSWORD
+.\.venv\Scripts\python.exe .\database\initialize_mysql.py
 ```
 
-The checker reports the MySQL server and schema version. It does not import the
-SQL file or change attendance data.
+This does not import the attendance CSV. Review the local CSV first, then opt in
+to a one-time migration:
 
-`mysql_repository.py` contains optional parameterized operations to list
-students, read attendance rows, check a daily mark, and write a check-in. It is
-not wired into recognition or reporting; CSV remains the active backend. The
-repository expects the schema and student rows to exist first. It has not been
-run against a live MySQL server in this environment.
+```powershell
+.\.venv\Scripts\python.exe .\database\initialize_mysql.py --import-csv
+```
 
-The schema stores student IDs, daily check-ins, and optional recognition scores.
-It does not store face images or face embeddings. `uq_attendance_student_day`
-enforces the current application rule of at most one attendance record per
-student per day. If the handover's periodic checkpoint policy is adopted, that
-key must be revised to include a session or checkpoint before database writes
-are enabled.
+The importer validates dates, times, and daily duplicates. It uses
+`INSERT IGNORE`, so it can be rerun safely: existing student/day records are
+skipped. The source CSV remains unchanged. To import another CSV, pass
+`--attendance "C:\path\to\attendance.csv"`.
 
-## Safe rollout sequence
+## 4. Use MySQL
 
-1. Install and secure MySQL 8.0 locally; create a dedicated application user
-   rather than using the root account.
-2. Open and run `schema.sql` in MySQL Workbench (or the MySQL CLI).
-3. Populate `students` from the approved roster. Do not infer display names
-   from folder names.
-4. Back up the CSV log, generate the SQL import, and inspect it before importing.
-5. Add application connection settings through environment variables and test
-   reads before changing recognition to write to MySQL.
+Set `ATTENDANCE_STORAGE=mysql` in `.env`. Then run the usual commands:
 
-The SQL file only creates tables and records schema version 1. It does not
-connect to a server, import the CSV, or alter the current attendance workflow.
+```powershell
+.\.venv\Scripts\python.exe .\recognition\recognize.py
+.\.venv\Scripts\python.exe .\recognition\attendance_report.py
+.\.venv\Scripts\python.exe .\recognition\attendance_period_report.py 2026-10-01 2026-10-31
+.\.venv\Scripts\python.exe .\recognition\attendance_dashboard.py
+```
+
+Enrollment remains local. After adding new student folders, run
+`database/initialize_mysql.py` again so their IDs are available to reports and
+the attendance foreign key. Use `ATTENDANCE_STORAGE=csv` to return to the CSV
+backend. You can set an explicit `--input` CSV for the period report or
+dashboard without changing the selected backend.
+
+The unique key `uq_attendance_student_day` allows one check-in per student per
+day, matching the current prototype. It does not implement periodic checkpoint
+attendance. Recognition matching also remains a prototype and needs independent
+validation before attendance decisions rely on it.

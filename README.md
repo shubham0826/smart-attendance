@@ -13,7 +13,7 @@ records daily attendance, and exports a daily CSV report.
 - Live webcam recognition and attendance logging have been run successfully
 - Phase 2 frame helpers passed a synthetic-frame check; run the updated preview
   once to confirm its FPS overlay on the target camera
-- Git and Visual Studio Code are available; this folder is not yet a Git repository
+- Git repository initialized on `main`; the GitHub remote is configured
 
 Use the project environment from any PowerShell location:
 
@@ -170,13 +170,9 @@ detections out of 80 images. Independent detection and robustness evaluation
 remain. The current recognition code is a prototype; its matching threshold
 has not been validated, and it must not be treated as an authoritative
 attendance decision.
-Flask, MySQL, periodic checkpoint policy, exam-seat verification, and dashboard
-integration remain future work. The first MySQL schema draft is in
-`database/schema.sql`; see `database/README.md` for its safe rollout sequence.
-The application still uses CSV until a MySQL server and connection settings are
-configured.
-The one-time CSV importer is `database/export_mysql_import.py`; it creates a
-validated SQL file but does not connect to MySQL. The optional MySQL connection
-checker is `database/check_connection.py`; setup steps are in `database/README.md`.
-An optional repository draft is in `database/mysql_repository.py`; it is not
-connected to the recognition flow, so CSV remains the active storage backend.
+MySQL is supported as an optional attendance backend for recognition, daily and
+period reports, and dashboard generation. CSV remains the default. Follow
+`database/README.md` to install the Python connector, configure a private `.env`,
+register the roster, and optionally migrate existing attendance rows. Periodic
+checkpoint policy and exam-seat verification remain future work. Face matching
+is still a prototype and needs independent validation before operational use.

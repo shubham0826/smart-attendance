@@ -1,14 +1,14 @@
-"""Optional MySQL repository for the Smart Attendance schema.
-
-This module is deliberately not connected to the recognition flow yet. The CSV
-backend remains active until a local MySQL server is configured and verified.
-"""
+"""MySQL persistence operations for the Smart Attendance schema."""
 
 import os
+from pathlib import Path
+
+from database.config import load_local_environment
 
 
 def connect_from_environment():
     """Open a MySQL connection using ATTENDANCE_DB_* environment variables."""
+    load_local_environment()
     try:
         import mysql.connector
     except ImportError as exc:
@@ -59,7 +59,7 @@ def list_attendance(start_date=None, end_date=None):
     try:
         cursor = connection.cursor(dictionary=True)
         query = (
-            "SELECT student_id, attendance_date, check_in_time, detector_score, "
+            "SELECT student_id, attendance_date, TIME_FORMAT(check_in_time, '%H:%i:%s') AS check_in_time, detector_score, "
             "match_distance, source FROM attendance"
         )
         filters = []
@@ -75,6 +75,53 @@ def list_attendance(start_date=None, end_date=None):
         query += " ORDER BY attendance_date, check_in_time, student_id"
         cursor.execute(query, tuple(params))
         return cursor.fetchall()
+    finally:
+        connection.close()
+
+
+def sync_students(student_ids):
+    """Add roster IDs without changing existing names or active flags."""
+    ids = sorted({str(student_id).strip() for student_id in student_ids if str(student_id).strip()})
+    if not ids:
+        return 0
+    connection = connect_from_environment()
+    try:
+        cursor = connection.cursor()
+        cursor.executemany(
+            "INSERT IGNORE INTO students (student_id) VALUES (%s)",
+            [(student_id,) for student_id in ids],
+        )
+        connection.commit()
+        return cursor.rowcount
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def import_attendance_csv(path):
+    """Import valid CSV check-ins idempotently; return inserted and skipped counts."""
+    from database.attendance_store import read_csv_attendance
+
+    rows = read_csv_attendance(Path(path))
+    if not rows:
+        return 0, 0
+    connection = connect_from_environment()
+    try:
+        cursor = connection.cursor()
+        cursor.executemany(
+            "INSERT IGNORE INTO attendance "
+            "(student_id, attendance_date, check_in_time, source) "
+            "VALUES (%s, %s, %s, 'csv_import')",
+            [(row["student_id"], row["attendance_date"], row["check_in_time"]) for row in rows],
+        )
+        inserted = cursor.rowcount
+        connection.commit()
+        return inserted, len(rows) - inserted
+    except Exception:
+        connection.rollback()
+        raise
     finally:
         connection.close()
 

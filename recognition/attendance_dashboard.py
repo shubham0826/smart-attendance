@@ -1,46 +1,42 @@
 """Generate an offline, read-only dashboard from the attendance CSV and roster."""
 
 import argparse
-import csv
 import json
-from datetime import datetime
+import sys
 from pathlib import Path
 
-
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_LOG = PROJECT_DIR / "attendance.csv"
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+from database import attendance_store
+
+
 DEFAULT_OUTPUT = PROJECT_DIR / "reports" / "attendance_dashboard.html"
-DATASET_DIR = PROJECT_DIR / "dataset"
 
 
-def load_dashboard_data(log_path):
-    roster = sorted(path.name for path in DATASET_DIR.iterdir() if path.is_dir()) if DATASET_DIR.is_dir() else []
+def load_dashboard_data(log_path=None):
+    roster = attendance_store.list_students()
     if not roster:
-        raise SystemExit(f"No student folders found in {DATASET_DIR}")
-    if not log_path.is_file():
-        raise SystemExit(f"Attendance log not found: {log_path}")
+        raise SystemExit("No registered students found in the configured attendance backend.")
 
     attendance = {}
-    with log_path.open("r", newline="", encoding="utf-8-sig") as file:
-        reader = csv.DictReader(file)
-        required = {"date", "time", "student_id"}
-        missing = required - set(reader.fieldnames or [])
-        if missing:
-            raise SystemExit(f"Attendance log is missing columns: {', '.join(sorted(missing))}")
-        for row in reader:
-            day = (row.get("date") or "").strip()
-            time = (row.get("time") or "").strip()
-            student_id = (row.get("student_id") or "").strip()
-            try:
-                datetime.strptime(day, "%Y-%m-%d")
-                datetime.strptime(time, "%H:%M:%S")
-            except ValueError:
-                continue
-            if student_id not in roster:
-                continue
-            attendance.setdefault(day, {})
-            if student_id not in attendance[day] or time < attendance[day][student_id]:
-                attendance[day][student_id] = time
+    rows = (
+        attendance_store.read_csv_attendance(log_path)
+        if log_path
+        else attendance_store.list_attendance()
+    )
+    for row in rows:
+        day = row["attendance_date"].isoformat()
+        time = row["check_in_time"]
+        if not isinstance(time, str):
+            time = time.strftime("%H:%M:%S")
+        student_id = row["student_id"]
+        if student_id not in roster:
+            continue
+        attendance.setdefault(day, {})
+        if student_id not in attendance[day] or time < attendance[day][student_id]:
+            attendance[day][student_id] = time
 
     return {"roster": roster, "attendance": attendance, "dates": sorted(attendance, reverse=True)}
 
@@ -97,7 +93,7 @@ HTML_TEMPLATE = r'''<!doctype html>
       <thead><tr><th>Student ID</th><th>Days present</th><th>Recorded dates</th></tr></thead>
       <tbody id="totals"></tbody>
     </table></div></section>
-    <footer>Generated from the local CSV. This dashboard does not change attendance records. Verify attendance manually before relying on it.</footer>
+    <footer>Generated from the configured attendance storage. This dashboard does not change attendance records. Verify attendance manually before relying on it.</footer>
   </main>
   <script>
     const data = __DATA__;
@@ -152,7 +148,7 @@ HTML_TEMPLATE = r'''<!doctype html>
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, default=DEFAULT_LOG, help="attendance CSV")
+    parser.add_argument("--input", type=Path, help="use this CSV instead of the configured backend")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="HTML output path")
     args = parser.parse_args()
 

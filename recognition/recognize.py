@@ -1,6 +1,5 @@
 """Recognize registered students from a webcam and record daily attendance."""
 
-import csv
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -14,38 +13,38 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
 from ai_module.face_detection import DEFAULT_SCORE_THRESHOLD, YuNetFaceDetector
+from database import attendance_store
 
 
 EMBEDDINGS_FILE = Path(__file__).resolve().parent / "face_embeddings.npz"
-ATTENDANCE_FILE = PROJECT_DIR / "attendance.csv"
 CAMERA_INDEX = 0
 MATCH_THRESHOLD = 0.50
 FRAME_SCALE = 0.25
 
 
 def load_attendance_for_today(today):
-    """Return IDs already recorded today, creating the CSV with a header if needed."""
-    ATTENDANCE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    if not ATTENDANCE_FILE.exists() or ATTENDANCE_FILE.stat().st_size == 0:
-        with ATTENDANCE_FILE.open("w", newline="", encoding="utf-8") as file:
-            csv.writer(file).writerow(["date", "time", "student_id"])
-        return set()
-
-    attended = set()
-    with ATTENDANCE_FILE.open("r", newline="", encoding="utf-8") as file:
-        for row in csv.DictReader(file):
-            if row.get("date") == today and row.get("student_id"):
-                attended.add(row["student_id"])
-    return attended
+    """Return IDs already recorded today from the configured backend."""
+    day = datetime.strptime(today, "%Y-%m-%d").date()
+    return {
+        row["student_id"] for row in attendance_store.list_attendance(day, day)
+    }
 
 
-def record_attendance(student_id, today, attended):
-    """Append one attendance row per student per date."""
+def record_attendance(student_id, today, attended, detector_score=None, match_distance=None):
+    """Record one attendance row per student per date."""
     if student_id in attended:
         return False
     now = datetime.now()
-    with ATTENDANCE_FILE.open("a", newline="", encoding="utf-8") as file:
-        csv.writer(file).writerow([today, now.strftime("%H:%M:%S"), student_id])
+    inserted = attendance_store.record_check_in(
+        student_id,
+        datetime.strptime(today, "%Y-%m-%d").date(),
+        now.time().replace(microsecond=0),
+        detector_score=detector_score,
+        match_distance=match_distance,
+    )
+    if not inserted:
+        attended.add(student_id)
+        return False
     attended.add(student_id)
     print(f"Attendance marked: {student_id} at {now.strftime('%H:%M:%S')}")
     return True
@@ -90,7 +89,8 @@ def main():
     if not camera.isOpened():
         raise SystemExit("Could not open the webcam. Check the camera connection and CAMERA_INDEX.")
 
-    print(f"Recognizing students with {args.detector.upper()}. Today's attendance: {ATTENDANCE_FILE}")
+    backend = attendance_store.backend()
+    print(f"Recognizing students with {args.detector.upper()} using {backend.upper()} storage.")
     if args.detector == "yunet":
         print(f"YuNet score threshold: {args.score_threshold:.2f}")
     else:
@@ -106,6 +106,7 @@ def main():
             if args.detector == "yunet":
                 detections = detector.detect(frame)
                 locations = [(top, right, bottom, left) for left, top, right, bottom, _ in detections]
+                detector_scores = [score for _, _, _, _, score in detections]
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 encodings = face_recognition.face_encodings(rgb_frame, locations)
                 coordinate_scale = 1.0
@@ -113,17 +114,20 @@ def main():
                 small = cv2.resize(frame, (0, 0), fx=FRAME_SCALE, fy=FRAME_SCALE)
                 rgb_small = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
                 locations = face_recognition.face_locations(rgb_small, model="hog")
+                detector_scores = [None] * len(locations)
                 encodings = face_recognition.face_encodings(rgb_small, locations)
                 coordinate_scale = 1.0 / FRAME_SCALE
 
-            for (top, right, bottom, left), encoding in zip(locations, encodings):
+            for (top, right, bottom, left), encoding, detector_score in zip(
+                locations, encodings, detector_scores
+            ):
                 distances = face_recognition.face_distance(known_encodings, encoding)
                 best_index = int(np.argmin(distances))
                 distance = float(distances[best_index])
 
                 if distance <= MATCH_THRESHOLD:
                     student_id = known_ids[best_index]
-                    record_attendance(student_id, today, attended)
+                    record_attendance(student_id, today, attended, detector_score, distance)
                     label = f"{student_id} - Present"
                     color = (0, 180, 0)
                 else:

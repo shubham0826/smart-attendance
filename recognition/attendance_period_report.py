@@ -1,14 +1,17 @@
 """Export per-student attendance totals for a date range from the CSV log."""
 
 import argparse
-import csv
+import sys
 from datetime import datetime
 from pathlib import Path
 
-
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-DATASET_DIR = PROJECT_DIR / "dataset"
-ATTENDANCE_FILE = PROJECT_DIR / "attendance.csv"
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+from database import attendance_store
+
+
 REPORT_DIR = PROJECT_DIR / "reports"
 
 
@@ -26,47 +29,36 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("start_date", type=parse_date, help="first date, inclusive (YYYY-MM-DD)")
     parser.add_argument("end_date", type=parse_date, help="last date, inclusive (YYYY-MM-DD)")
-    parser.add_argument("--input", type=Path, default=ATTENDANCE_FILE, help="attendance CSV")
+    parser.add_argument("--input", type=Path, help="use this CSV instead of the configured backend")
     parser.add_argument("--output", type=Path, help="optional CSV output path")
     args = parser.parse_args()
 
     if args.end_date < args.start_date:
         parser.error("end_date must be on or after start_date")
-    if not DATASET_DIR.is_dir():
-        raise SystemExit(f"Roster directory not found: {DATASET_DIR}")
-    roster = sorted(path.name for path in DATASET_DIR.iterdir() if path.is_dir())
+    roster = attendance_store.list_students()
     if not roster:
-        raise SystemExit(f"No student folders found in {DATASET_DIR}")
-    if not args.input.is_file():
-        raise SystemExit(f"Attendance log not found: {args.input}")
+        raise SystemExit("No registered students found in the configured attendance backend.")
 
     present_dates = {student_id: set() for student_id in roster}
     first_seen = {}
     last_seen = {}
     class_dates = set()
-    with args.input.open("r", newline="", encoding="utf-8-sig") as file:
-        reader = csv.DictReader(file)
-        required = {"date", "time", "student_id"}
-        missing = required - set(reader.fieldnames or [])
-        if missing:
-            raise SystemExit(f"Attendance CSV is missing columns: {', '.join(sorted(missing))}")
-        for row in reader:
-            student_id = (row.get("student_id") or "").strip()
-            try:
-                day = datetime.strptime((row.get("date") or "").strip(), "%Y-%m-%d").date()
-                check_in = datetime.strptime((row.get("time") or "").strip(), "%H:%M:%S").time()
-            except ValueError:
-                continue
-            if day.isoformat() != (row.get("date") or "").strip():
-                continue
-            if not args.start_date <= day <= args.end_date or student_id not in present_dates:
-                continue
-            day_text = day.isoformat()
-            time_text = check_in.strftime("%H:%M:%S")
-            present_dates[student_id].add(day_text)
-            class_dates.add(day_text)
-            first_seen[student_id] = min(first_seen.get(student_id, time_text), time_text)
-            last_seen[student_id] = max(last_seen.get(student_id, time_text), time_text)
+    if args.input:
+        source_rows = attendance_store.read_csv_attendance(args.input)
+    else:
+        source_rows = attendance_store.list_attendance(args.start_date, args.end_date)
+    for row in source_rows:
+        student_id = row["student_id"]
+        day = row["attendance_date"]
+        check_in = row["check_in_time"]
+        time_text = check_in if isinstance(check_in, str) else check_in.strftime("%H:%M:%S")
+        if not args.start_date <= day <= args.end_date or student_id not in present_dates:
+            continue
+        day_text = day.isoformat()
+        present_dates[student_id].add(day_text)
+        class_dates.add(day_text)
+        first_seen[student_id] = min(first_seen.get(student_id, time_text), time_text)
+        last_seen[student_id] = max(last_seen.get(student_id, time_text), time_text)
 
     observed_days = len(class_dates)
     rows = []

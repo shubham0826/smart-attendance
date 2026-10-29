@@ -6,33 +6,33 @@ Usage:
 """
 
 import argparse
-import csv
 from datetime import date, datetime
 from pathlib import Path
-
+import sys
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-DATASET_DIR = PROJECT_DIR / "dataset"
-ATTENDANCE_FILE = PROJECT_DIR / "attendance.csv"
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+from database import attendance_store
+
+
 REPORT_DIR = PROJECT_DIR / "reports"
 
 
 def build_report(report_date):
-    roster = sorted(path.name for path in DATASET_DIR.iterdir() if path.is_dir()) if DATASET_DIR.is_dir() else []
+    roster = attendance_store.list_students()
     if not roster:
-        raise SystemExit(f"No registered students found in {DATASET_DIR}")
-    if not ATTENDANCE_FILE.is_file():
-        raise SystemExit(f"Attendance log not found: {ATTENDANCE_FILE}")
+        raise SystemExit("No registered students found in the configured attendance backend.")
 
     check_ins = {}
-    with ATTENDANCE_FILE.open("r", newline="", encoding="utf-8") as file:
-        for row in csv.DictReader(file):
-            student_id = (row.get("student_id") or "").strip()
-            if row.get("date") != report_date.isoformat() or student_id not in roster:
-                continue
-            check_in = (row.get("time") or "").strip()
-            if student_id not in check_ins or check_in < check_ins[student_id]:
-                check_ins[student_id] = check_in
+    for row in attendance_store.list_attendance(report_date, report_date):
+        student_id = row["student_id"]
+        if student_id not in roster:
+            continue
+        check_in = str(row["check_in_time"])
+        if student_id not in check_ins or check_in < check_ins[student_id]:
+            check_ins[student_id] = check_in
 
     return [
         {
@@ -46,7 +46,7 @@ def build_report(report_date):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Create a daily report from attendance.csv")
+    parser = argparse.ArgumentParser(description="Create a daily report from the configured attendance backend")
     parser.add_argument(
         "date",
         nargs="?",
