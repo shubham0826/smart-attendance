@@ -13,6 +13,24 @@ student IDs, and polygons. Each polygon uses normalized `[x, y]` coordinates
 from `0.0` to `1.0`, measured from the top-left of the camera frame. Local plans
 are excluded from Git because they contain student-to-seat assignments.
 
+To draw zones instead of editing polygon numbers by hand, prepare the private
+assignment CSV and run the visual calibrator with a reference frame from the
+intended camera:
+
+```powershell
+Copy-Item .\exam\templates\seat_assignments.template.csv .\exam\seat_assignments.local.csv
+notepad .\exam\seat_assignments.local.csv
+.\.venv\Scripts\python.exe .\exam\calibrate_seat_zones.py `
+  --image .\path\to\camera-reference.jpg `
+  --assignments .\exam\seat_assignments.local.csv `
+  --exam-id EXAM-ID
+```
+
+For each seat, click at least three zone corners and press Enter. Backspace
+removes the last point; Escape cancels without writing a plan. The calibrator
+uses the image only for drawing and does not copy or save it. It refuses to
+overwrite an existing output plan.
+
 Validate the plan:
 
 ```powershell

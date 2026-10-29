@@ -17,3 +17,4 @@ reports/
 # Local examination plans may contain student-to-seat assignments
 exam/plans/
 exam/seat_plan.local.json
+exam/seat_assignments.local.csv
