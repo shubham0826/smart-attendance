@@ -168,6 +168,23 @@ Enrollment images, face embeddings, attendance logs, and generated reports are
 local data and are excluded by `.gitignore`. Handle these biometric records
 according to the project's consent, access, and retention requirements.
 
+## Exam seat-plan groundwork
+
+Use `exam/templates/seat_plan.template.json` as a starting point. Copy it to
+`exam/seat_plan.local.json`, replace the placeholder exam and student IDs, and
+calibrate each normalized seat-zone polygon against a frame from the intended
+camera. Local plans are excluded from Git because they contain student-to-seat
+assignments. Validate a plan with:
+
+```powershell
+python "C:\smart attendance\exam\seat_plan.py" "C:\smart attendance\exam\seat_plan.local.json"
+```
+
+The geometry helper maps face-box centers to zones and returns counts only. It
+does not verify a person's identity, treat an empty zone as proof of a seating
+violation, or replace teacher review. Camera calibration and person detection
+remain to be completed in the exam room.
+
 ## Next phases
 
 Phase 1 environment setup is complete. Phase 2 frame-processing helpers are
@@ -183,4 +200,6 @@ CSV remains the code default; the private local `.env` selects MySQL for this
 machine. Checkpoint detections do not decide absence; missing detections remain
 pending human review. See `database/README.md` for setup and reporting commands.
 The institutional checkpoint policy and exam-seat verification remain future
-work. Face matching is still a prototype and needs independent validation.
+work. A review-only seat-plan geometry foundation is in `exam/seat_plan.py`; it
+does not identify students or make seating-violation decisions. Face matching
+is still a prototype and needs independent validation.

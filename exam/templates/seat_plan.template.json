@@ -1,0 +1,29 @@
+{
+  "exam_id": "EXAM-REPLACE-ME",
+  "camera": {
+    "frame_width": 1920,
+    "frame_height": 1080
+  },
+  "seats": [
+    {
+      "seat_id": "R1C1",
+      "student_id": "REPLACE_WITH_APPROVED_STUDENT_ID_1",
+      "zone": [[0.10, 0.20], [0.35, 0.20], [0.35, 0.55], [0.10, 0.55]]
+    },
+    {
+      "seat_id": "R1C2",
+      "student_id": "REPLACE_WITH_APPROVED_STUDENT_ID_2",
+      "zone": [[0.40, 0.20], [0.65, 0.20], [0.65, 0.55], [0.40, 0.55]]
+    },
+    {
+      "seat_id": "R2C1",
+      "student_id": "REPLACE_WITH_APPROVED_STUDENT_ID_3",
+      "zone": [[0.10, 0.60], [0.35, 0.60], [0.35, 0.90], [0.10, 0.90]]
+    },
+    {
+      "seat_id": "R2C2",
+      "student_id": "REPLACE_WITH_APPROVED_STUDENT_ID_4",
+      "zone": [[0.40, 0.60], [0.65, 0.60], [0.65, 0.90], [0.40, 0.90]]
+    }
+  ]
+}

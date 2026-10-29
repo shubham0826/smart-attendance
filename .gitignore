@@ -13,3 +13,7 @@ dataset/
 recognition/face_embeddings.npz
 attendance.csv
 reports/
+
+# Local examination plans may contain student-to-seat assignments
+exam/plans/
+exam/seat_plan.local.json
