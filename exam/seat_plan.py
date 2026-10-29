@@ -157,6 +157,7 @@ def map_face_boxes_to_seats(plan, boxes):
     width = valid["camera"]["frame_width"]
     height = valid["camera"]["frame_height"]
     counts = {seat["seat_id"]: 0 for seat in valid["seats"]}
+    ambiguous_by_seat = {seat["seat_id"]: 0 for seat in valid["seats"]}
     ambiguous, unassigned = 0, 0
     for index, box in enumerate(boxes, start=1):
         if not isinstance(box, (tuple, list)) or len(box) != 4 or not all(_number(value) for value in box):
@@ -170,18 +171,24 @@ def map_face_boxes_to_seats(plan, boxes):
             counts[matching[0]] += 1
         elif len(matching) > 1:
             ambiguous += 1
+            for seat_id in matching:
+                ambiguous_by_seat[seat_id] += 1
         else:
             unassigned += 1
 
     observations = []
     for seat in valid["seats"]:
         count = counts[seat["seat_id"]]
+        ambiguous_count = ambiguous_by_seat[seat["seat_id"]]
         observations.append({
             "seat_id": seat["seat_id"],
-            "expected_student_id": seat["student_id"],
             "face_count": count,
+            "ambiguous_face_count": ambiguous_count,
             "occupancy_observation": (
-                "one_face_detected" if count == 1 else "multiple_faces_detected" if count > 1 else "no_face_detected"
+                "ambiguous_face_position" if ambiguous_count else
+                "one_face_detected" if count == 1 else
+                "multiple_faces_detected" if count > 1 else
+                "no_face_detected"
             ),
         })
     return {

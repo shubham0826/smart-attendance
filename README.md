@@ -174,16 +174,18 @@ Use `exam/templates/seat_plan.template.json` as a starting point. Copy it to
 `exam/seat_plan.local.json`, replace the placeholder exam and student IDs, and
 calibrate each normalized seat-zone polygon against a frame from the intended
 camera. Local plans are excluded from Git because they contain student-to-seat
-assignments. Validate a plan with:
+assignments. Validate and inspect a still frame with:
 
 ```powershell
 python "C:\smart attendance\exam\seat_plan.py" "C:\smart attendance\exam\seat_plan.local.json"
+python "C:\smart attendance\exam\analyze_seat_image.py" --plan "C:\smart attendance\exam\seat_plan.local.json" --image "C:\path\to\test-frame.jpg" --no-display
 ```
 
-The geometry helper maps face-box centers to zones and returns counts only. It
-does not verify a person's identity, treat an empty zone as proof of a seating
-violation, or replace teacher review. Camera calibration and person detection
-remain to be completed in the exam room.
+The still-image tool maps YuNet face-box centers to zones and returns counts
+only. It does not verify a person's identity, treat a missed detection as proof
+of a seating violation, or replace teacher review. Camera calibration and
+person detection remain to be completed in the exam room. See `exam/README.md`
+for the local plan format and output details.
 
 ## Next phases
 
