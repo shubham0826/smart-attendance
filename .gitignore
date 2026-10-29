@@ -19,3 +19,5 @@ exam/plans/
 exam/seat_plan.local.json
 exam/seat_assignments.local.csv
 exam/identity_observations.local.json
+exam/reference_frame.local.*
+exam/reference_frames/

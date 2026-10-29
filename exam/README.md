@@ -14,14 +14,21 @@ from `0.0` to `1.0`, measured from the top-left of the camera frame. Local plans
 are excluded from Git because they contain student-to-seat assignments.
 
 To draw zones instead of editing polygon numbers by hand, prepare the private
-assignment CSV and run the visual calibrator with a reference frame from the
-intended camera:
+assignment CSV and first capture a reference frame from the intended camera:
+
+```powershell
+.\.venv\Scripts\python.exe .\exam\capture_reference_frame.py
+```
+
+Aim the camera at the exam room, then press Space to save the frame. The default
+image path is `exam/reference_frame.local.jpg`; it is ignored by Git. Press Q
+or Esc to cancel without saving. Use the exact saved frame for calibration:
 
 ```powershell
 Copy-Item .\exam\templates\seat_assignments.template.csv .\exam\seat_assignments.local.csv
 notepad .\exam\seat_assignments.local.csv
 .\.venv\Scripts\python.exe .\exam\calibrate_seat_zones.py `
-  --image .\path\to\camera-reference.jpg `
+  --image .\exam\reference_frame.local.jpg `
   --assignments .\exam\seat_assignments.local.csv `
   --exam-id EXAM-ID
 ```

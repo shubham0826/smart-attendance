@@ -174,9 +174,9 @@ Use `exam/templates/seat_plan.template.json` as a starting point. Copy it to
 `exam/seat_plan.local.json`, replace the placeholder exam and student IDs, and
 calibrate each normalized seat-zone polygon against a frame from the intended
 camera. Local plans are excluded from Git because they contain student-to-seat
-assignments. Use `exam/calibrate_seat_zones.py` with a camera reference image and
-local assignment CSV to draw the polygons. Validate and inspect a still frame
-with:
+assignments. Capture a local frame with `exam/capture_reference_frame.py`, then
+use `exam/calibrate_seat_zones.py` with the private assignment CSV to draw the
+polygons. Validate and inspect a still frame with:
 
 ```powershell
 python "C:\smart attendance\exam\seat_plan.py" "C:\smart attendance\exam\seat_plan.local.json"
