@@ -8,7 +8,8 @@
     {
       "bbox": [420, 260, 510, 370],
       "identity_status": "unknown",
-      "student_id": null
+      "candidate_student_id": null,
+      "match_distance": null
     }
   ]
 }

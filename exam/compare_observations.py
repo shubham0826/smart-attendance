@@ -28,7 +28,11 @@ def load_observations(path, plan):
             payload = json.load(file)
         except json.JSONDecodeError as exc:
             raise ValueError(f"Invalid observations JSON: {exc}") from exc
+    return validate_observations(payload, plan)
 
+
+def validate_observations(payload, plan):
+    """Validate a decoded observation payload against the seat plan."""
     if not isinstance(payload, dict):
         raise ValueError("Observations document must be a JSON object.")
     if payload.get("exam_id") != plan["exam_id"]:
@@ -69,17 +73,17 @@ def load_observations(path, plan):
             raise ValueError(f"Observation {index} bbox must be inside the declared frame.")
 
         identity_status = item.get("identity_status")
-        student_id = item.get("student_id")
-        if not isinstance(identity_status, str) or identity_status not in {"recognized", "unknown", "uncertain"}:
+        candidate_student_id = item.get("candidate_student_id")
+        if not isinstance(identity_status, str) or identity_status not in {"candidate", "unknown", "uncertain"}:
             raise ValueError(
-                f"Observation {index} identity_status must be recognized, unknown, or uncertain."
+                f"Observation {index} identity_status must be candidate, unknown, or uncertain."
             )
-        if identity_status == "recognized":
-            if not isinstance(student_id, str) or not student_id.strip():
-                raise ValueError(f"Observation {index}: recognized identity requires student_id.")
-            student_id = student_id.strip()
-        elif student_id is not None:
-            raise ValueError(f"Observation {index}: unknown/uncertain identities must not include student_id.")
+        if identity_status == "candidate":
+            if not isinstance(candidate_student_id, str) or not candidate_student_id.strip():
+                raise ValueError(f"Observation {index}: candidate identity requires candidate_student_id.")
+            candidate_student_id = candidate_student_id.strip()
+        elif candidate_student_id is not None:
+            raise ValueError(f"Observation {index}: unknown/uncertain identities must not include candidate_student_id.")
 
         match_distance = item.get("match_distance")
         if match_distance is not None and (
@@ -90,7 +94,7 @@ def load_observations(path, plan):
         validated.append({
             "bbox": [float(value) for value in box],
             "identity_status": identity_status,
-            "student_id": student_id,
+            "candidate_student_id": candidate_student_id,
             "match_distance": match_distance,
         })
     return validated
@@ -120,9 +124,9 @@ def compare_observations(plan, observations):
             outside_count += 1
 
     detected_ids = Counter(
-        item["student_id"]
+        item["candidate_student_id"]
         for item in observations
-        if item["identity_status"] == "recognized"
+        if item["identity_status"] == "candidate"
     )
     rows = []
     status_counts = Counter()
@@ -143,8 +147,8 @@ def compare_observations(plan, observations):
             reason = "multiple face detections in one seat zone"
         else:
             _, face = faces[0]
-            observed_id = face["student_id"]
-            if face["identity_status"] != "recognized":
+            observed_id = face["candidate_student_id"]
+            if face["identity_status"] != "candidate":
                 status = "uncertain"
                 reason = f"identity is {face['identity_status']}"
             elif detected_ids[observed_id] > 1:
@@ -152,15 +156,15 @@ def compare_observations(plan, observations):
                 reason = "the same identity was reported in multiple detections"
             elif observed_id == expected_id:
                 status = "candidate_match_for_review"
-                reason = "recognized ID matches the assigned seat; teacher review is still required"
+                reason = "candidate ID matches the assigned seat; teacher review is still required"
             else:
                 status = "possible_assignment_mismatch_for_review"
-                reason = "recognized ID differs from the seat assignment; review evidence before any action"
+                reason = "candidate ID differs from the seat assignment; review evidence before any action"
         status_counts[status] += 1
         rows.append({
             "seat_id": seat_id,
             "expected_student_id": expected_id,
-            "observed_student_id": observed_id,
+            "candidate_student_id": observed_id,
             "status": status,
             "reason": reason,
             "review_required": True,

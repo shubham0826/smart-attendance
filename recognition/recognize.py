@@ -15,11 +15,11 @@ if str(PROJECT_DIR) not in sys.path:
 
 from ai_module.face_detection import DEFAULT_SCORE_THRESHOLD, YuNetFaceDetector
 from database import attendance_store
+from recognition.matching import find_best_candidate
 
 
 EMBEDDINGS_FILE = Path(__file__).resolve().parent / "face_embeddings.npz"
 CAMERA_INDEX = 0
-MATCH_THRESHOLD = 0.50
 FRAME_SCALE = 0.25
 
 
@@ -147,12 +147,12 @@ def main():
             for (top, right, bottom, left), encoding, detector_score in zip(
                 locations, encodings, detector_scores
             ):
-                distances = face_recognition.face_distance(known_encodings, encoding)
-                best_index = int(np.argmin(distances))
-                distance = float(distances[best_index])
+                candidate_id, distance, accepted = find_best_candidate(
+                    known_encodings, known_ids, encoding
+                )
 
-                if distance <= MATCH_THRESHOLD:
-                    student_id = known_ids[best_index]
+                if accepted:
+                    student_id = candidate_id
                     observed_since_checkpoint.add(student_id)
                     record_attendance(student_id, today, attended, detector_score, distance)
                     label = f"{student_id} - Present"

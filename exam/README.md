@@ -1,9 +1,9 @@
 # Exam seat-zone prototype
 
-This is a still-image geometry prototype for the Exam Mode roadmap. It uses the
-existing YuNet face detector, then assigns each face-box center to a configured
-seat-zone polygon. It does not recognize students, detect bodies, or decide
-whether anyone violated a seating plan.
+These still-image tools use the existing YuNet face detector and local face
+embeddings to prepare exam-seat observations. They do not detect bodies or
+decide whether anyone violated a seating plan. Every identity and seat result
+is a candidate for teacher review.
 
 ## Prepare a local plan
 
@@ -62,14 +62,39 @@ absent, or a rule was violated. A wide classroom camera may not show faces well
 enough for this method; a calibrated room image and person-detection approach
 are still needed before this can support an exam workflow.
 
-## Compare identity observations with a plan
+## Analyze identities and seat positions together
 
-`compare_observations.py` defines the input contract for a later identity
-provider. Start from `templates/observations.template.json` and replace its
-example exam ID, frame dimensions, and bounding boxes. Each observation must
-set `identity_status` to `recognized`, `unknown`, or `uncertain`. Only a
-`recognized` observation may contain `student_id`; the other statuses must use
-`null`. The file format does not decide whether a model's match is reliable.
+Once the local seat plan and face embeddings are ready, run the integrated
+still-image command:
+
+```powershell
+.\.venv\Scripts\python.exe .\exam\analyze_exam_image.py `
+  --plan .\exam\seat_plan.local.json `
+  --image .\path\to\camera-reference.jpg `
+  --json-output .\reports\exam\review.json
+```
+
+The default match distance threshold is inherited from the attendance
+recognizer (`0.50`) and is **not independently validated**. Results use
+`candidate_match_for_review`, `possible_assignment_mismatch_for_review`, and
+`uncertain`; none are final decisions. A candidate or possible mismatch still
+requires a teacher to inspect the evidence. Unknown faces are not assigned to a
+nearest student. A low-distance candidate can still be wrong.
+
+No image or detailed JSON is written unless an output path is supplied. A
+detailed report includes student IDs and should stay in the ignored `reports/`
+folder. `--annotated-output` explicitly saves a copy of the image; without it,
+the input image is not modified.
+
+## Compare observations from another identity provider
+
+`compare_observations.py` can also compare a JSON observation payload from
+another identity provider. Start from `templates/observations.template.json`
+and replace its example exam ID, frame dimensions, and bounding boxes. Each
+observation must set `identity_status` to `candidate`, `unknown`, or `uncertain`.
+Only a `candidate` observation may contain `candidate_student_id`; the other
+statuses must use `null`. The file format does not decide whether a model's
+match is reliable.
 
 Run the comparison:
 
@@ -82,8 +107,7 @@ Run the comparison:
 
 Every seat result requires teacher review. Matching IDs are only candidates for
 review; different IDs are possible mismatches for review; missing, unknown,
-duplicate, or overlapping observations remain uncertain. The tool does not
+duplicate, or overlapping observations remain uncertain. This tool does not
 write attendance, change a review status, or make a final seating decision.
 Observation files and detailed review reports may contain student IDs and must
-remain local. This is an input contract and comparison step; no face-recognition
-identity provider is connected to Exam Mode yet.
+remain local.

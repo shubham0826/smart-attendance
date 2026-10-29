@@ -183,14 +183,13 @@ python "C:\smart attendance\exam\seat_plan.py" "C:\smart attendance\exam\seat_pl
 python "C:\smart attendance\exam\analyze_seat_image.py" --plan "C:\smart attendance\exam\seat_plan.local.json" --image "C:\path\to\test-frame.jpg" --no-display
 ```
 
-The still-image tool maps YuNet face-box centers to zones and returns counts
-only. It does not verify a person's identity, treat a missed detection as proof
-of a seating violation, or replace teacher review. Camera calibration and
-person detection remain to be completed in the exam room. The input-contract
-comparator in `exam/compare_observations.py` can classify future identity
-observations as candidate matches, possible mismatches, or uncertain, always
-for teacher review. No identity provider is connected yet. See `exam/README.md`
-for details.
+The geometry-only still-image tool maps YuNet face-box centers to zones and
+returns counts. `exam/analyze_exam_image.py` can also compare faces against the
+local embeddings, using the attendance recognizer's experimental threshold.
+Those matches are candidates for teacher review, not verified identities; a
+possible mismatch is not a violation finding. Camera calibration and person
+detection remain to be completed in the exam room. See `exam/README.md` for
+details.
 
 ## Next phases
 
