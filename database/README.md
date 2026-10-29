@@ -82,7 +82,8 @@ observation window every 20 minutes by default. Use `--checkpoint-minutes N` to
 change the interval. The checkpoint report marks students not seen during that
 window as `not_observed` with review status `pending`; this is not an absence
 decision. A teacher must review observations under the institution's attendance
-policy.
+policy. The offline dashboard also includes all checkpoint rows from the latest
+recognition session when generated with MySQL selected.
 
 Enrollment remains local. After adding new student folders, run
 `database/initialize_mysql.py` again so their IDs are available to reports and

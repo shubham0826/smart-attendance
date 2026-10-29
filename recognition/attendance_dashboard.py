@@ -38,7 +38,29 @@ def load_dashboard_data(log_path=None):
         if student_id not in attendance[day] or time < attendance[day][student_id]:
             attendance[day][student_id] = time
 
-    return {"roster": roster, "attendance": attendance, "dates": sorted(attendance, reverse=True)}
+    checkpoints = {"session_id": None, "rows": []}
+    if log_path is None and attendance_store.backend() == "mysql":
+        session_id, checkpoint_rows = attendance_store.list_checkpoint_observations()
+        checkpoints = {
+            "session_id": session_id,
+            "rows": [
+                {
+                    "student_id": row["student_id"],
+                    "window_start_at": row["window_start_at"].isoformat(sep=" "),
+                    "checkpoint_at": row["checkpoint_at"].isoformat(sep=" "),
+                    "observation_status": row["observation_status"],
+                    "review_status": row["review_status"],
+                }
+                for row in checkpoint_rows
+            ],
+        }
+
+    return {
+        "roster": roster,
+        "attendance": attendance,
+        "dates": sorted(attendance, reverse=True),
+        "checkpoints": checkpoints,
+    }
 
 
 HTML_TEMPLATE = r'''<!doctype html>
@@ -70,6 +92,7 @@ HTML_TEMPLATE = r'''<!doctype html>
     th { color: #637188; font-size: .82rem; font-weight: 600; }
     .present { color: #087443; font-weight: 600; }
     .absent { color: #a54136; font-weight: 600; }
+    .not-observed { color: #9a5b00; font-weight: 600; }
     .muted { color: #718096; }
     footer { margin-top: 18px; color: #718096; font-size: .82rem; }
     @media (max-width: 700px) { .cards { grid-template-columns: repeat(2, 1fr); } main { margin-top: 16px; } }
@@ -93,6 +116,13 @@ HTML_TEMPLATE = r'''<!doctype html>
       <thead><tr><th>Student ID</th><th>Days present</th><th>Recorded dates</th></tr></thead>
       <tbody id="totals"></tbody>
     </table></div></section>
+    <section><h2>Checkpoints · latest recognition session</h2>
+      <p id="checkpoint-note" class="muted"></p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Student ID</th><th>Observation window</th><th>Observation</th><th>Review</th></tr></thead>
+        <tbody id="checkpoints"></tbody>
+      </table></div>
+    </section>
     <footer>Generated from the configured attendance storage. This dashboard does not change attendance records. Verify attendance manually before relying on it.</footer>
   </main>
   <script>
@@ -100,12 +130,31 @@ HTML_TEMPLATE = r'''<!doctype html>
     const select = document.getElementById('day');
     const dailyBody = document.getElementById('daily');
     const totalsBody = document.getElementById('totals');
+    const checkpointBody = document.getElementById('checkpoints');
     const addCell = (row, value, className = '') => {
       const cell = document.createElement('td');
       cell.textContent = value;
       if (className) cell.className = className;
       row.appendChild(cell);
     };
+    const checkpoint = data.checkpoints || { session_id: null, rows: [] };
+    const checkpointNote = document.getElementById('checkpoint-note');
+    if (checkpoint.session_id === null) {
+      checkpointNote.textContent = 'Checkpoint observations are included when this dashboard uses the configured MySQL backend.';
+    } else if (checkpoint.rows.length === 0) {
+      checkpointNote.textContent = `Session ${checkpoint.session_id} has not completed a checkpoint window yet.`;
+    } else {
+      checkpointNote.textContent = `Session ${checkpoint.session_id}. Not observed means the person was not recognized during that window; it is not an absence decision.`;
+      for (const item of checkpoint.rows) {
+        const row = document.createElement('tr');
+        const observation = item.observation_status === 'not_observed' ? 'Not observed · review required' : 'Observed';
+        addCell(row, item.student_id);
+        addCell(row, `${item.window_start_at} → ${item.checkpoint_at}`);
+        addCell(row, observation, item.observation_status === 'not_observed' ? 'not-observed' : 'present');
+        addCell(row, item.review_status.replaceAll('_', ' '));
+        checkpointBody.appendChild(row);
+      }
+    }
     const option = document.createElement('option');
     option.value = 'all'; option.textContent = 'All dates'; select.appendChild(option);
     for (const day of data.dates) {
@@ -159,7 +208,10 @@ def main():
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(html, encoding="utf-8")
     print(f"Dashboard created: {args.output}")
-    print(f"Roster: {len(data['roster'])} | Attendance dates: {len(data['dates'])}")
+    print(
+        f"Roster: {len(data['roster'])} | Attendance dates: {len(data['dates'])} "
+        f"| Checkpoint rows: {len(data['checkpoints']['rows'])}"
+    )
 
 
 if __name__ == "__main__":
