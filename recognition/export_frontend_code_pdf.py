@@ -31,6 +31,19 @@ def extract_sections():
         ("HTML MARKUP", markup.strip("\n")),
         ("CSS STYLES", style.group(1).strip("\n")),
         ("JAVASCRIPT", script.group(1).strip("\n")),
+        (
+            "HOW THE FRONTEND IS USED",
+            "\n".join(
+                [
+                    "Python prepares the dashboard data. It reads the student roster and attendance from the configured CSV or MySQL storage, then places that data into the web page.",
+                    "HTML is the page structure: the date selector, summary cards, attendance tables, checkpoint table, and footer that appear in the browser.",
+                    "CSS is the visual design. It sets the colors, spacing, cards, tables, and a layout that adjusts for smaller screens.",
+                    "JavaScript fills the page with the supplied data. It builds the date choices and tables, calculates the displayed totals, and refreshes daily details when a date is selected.",
+                    "The checkpoint table shows observations from the latest recognition session. 'Not observed' means the system did not recognize someone during that window; it does not decide that they were absent.",
+                    "The Python script writes the finished page to reports/attendance_dashboard.html. Open that file in a browser to use the dashboard. The dashboard displays information and does not change attendance records.",
+                ]
+            ),
+        ),
     ]
 
 
@@ -70,6 +83,25 @@ def make_pdf(sections, output):
 
     start_page(first=True)
     for title, section in sections:
+        if title == "HOW THE FRONTEND IS USED":
+            finish_page()
+            page_number += 1
+            start_page()
+            commands.append(draw(title, LEFT, y, "F2", 12))
+            y -= 22
+            commands.append(draw("A quick guide to the parts shown in the code listing.", LEFT, y, size=9))
+            y -= 22
+            for paragraph in section.splitlines():
+                wrapped = textwrap.wrap(paragraph, width=96, break_long_words=False, break_on_hyphens=False)
+                for part in wrapped:
+                    if y < 48:
+                        finish_page()
+                        page_number += 1
+                        start_page()
+                    commands.append(draw(part, LEFT, y, size=9))
+                    y -= 13
+                y -= 9
+            continue
         if y < 65:
             finish_page()
             page_number += 1
