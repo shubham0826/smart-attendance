@@ -1,0 +1,199 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 8146 >>
+stream
+0.08 0.16 0.28 rg
+BT /F2 19 Tf 1 0 0 1 42 790 Tm (Smart Attendance - Frontend Code) Tj ET
+0 0 0 rg
+BT /F1 9 Tf 1 0 0 1 42 768 Tm (HTML, CSS, and JavaScript from recognition/attendance_dashboard.py) Tj ET
+BT /F2 10 Tf 1 0 0 1 42 751 Tm (HTML MARKUP) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 736 Tm (   1 <!doctype html>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 726.8 Tm (   2 <html lang="en">) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 717.5999999999999 Tm (   3 <head>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 708.3999999999999 Tm (   4   <meta charset="utf-8">) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 699.1999999999998 Tm (   5   <meta name="viewport" content="width=device-width, initial-scale=1">) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 689.9999999999998 Tm (   6   <meta name="color-scheme" content="light">) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 680.7999999999997 Tm (   7   <title>Smart Attendance Dashboard</title>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 671.5999999999997 Tm (   8   ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 662.3999999999996 Tm (   9 </head>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 653.1999999999996 Tm (  10 <body>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 643.9999999999995 Tm (  11   <header><h1>Smart Attendance</h1><p>Local read-only view of the attendance log</p></header>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 634.7999999999995 Tm (  12   <main>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 625.5999999999995 Tm (  13     <div class="controls"><label for="day">Attendance date</label><select id="day"></select></div>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 616.3999999999994 Tm (  14     <div class="cards">) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 607.1999999999994 Tm (  15       <div class="card"><span>Present</span><strong id="present">0</strong></div>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 597.9999999999993 Tm (  16       <div class="card"><span>Absent</span><strong id="absent">0</strong></div>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 588.7999999999993 Tm (  17       <div class="card"><span>Roster size</span><strong id="roster">0</strong></div>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 579.5999999999992 Tm (  18       <div class="card"><span>Attendance rate</span><strong id="rate">0%</strong></div>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 570.3999999999992 Tm (  19     </div>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 561.1999999999991 Tm (  20     <section><h2 id="daily-heading">Daily attendance</h2><div class="table-wrap"><table>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 551.9999999999991 Tm (  21       <thead><tr><th>Student ID</th><th>Status</th><th>First check-in</th></tr></thead>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 542.799999999999 Tm (  22       <tbody id="daily"></tbody>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 533.599999999999 Tm (  23     </table></div></section>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 524.399999999999 Tm (  24     <section><h2>Recorded attendance by student</h2><div class="table-wrap"><table>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 515.1999999999989 Tm (  25       <thead><tr><th>Student ID</th><th>Days present</th><th>Recorded dates</th></tr></thead>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 505.9999999999989 Tm (  26       <tbody id="totals"></tbody>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 496.79999999999893 Tm (  27     </table></div></section>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 487.59999999999894 Tm (  28     <section><h2>Checkpoints ∑ latest recognition session</h2>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 478.39999999999895 Tm (  29       <p id="checkpoint-note" class="muted"></p>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 469.19999999999897 Tm (  30       <div class="table-wrap"><table>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 459.999999999999 Tm (  31         <thead><tr><th>Student ID</th><th>Observation ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 450.799999999999 Tm (     window</th><th>Observation</th><th>Review</th></tr></thead>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 441.599999999999 Tm (  32         <tbody id="checkpoints"></tbody>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 432.399999999999 Tm (  33       </table></div>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 423.199999999999 Tm (  34     </section>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 413.99999999999903 Tm (  35     <footer>Generated from the configured attendance storage. This dashboard does not change attendance ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 404.79999999999905 Tm (     records. Verify attendance manually before relying on it.</footer>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 395.59999999999906 Tm (  36   </main>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 386.39999999999907 Tm (  37   ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 377.1999999999991 Tm (  38 </body>) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 367.9999999999991 Tm (  39 </html>) Tj ET
+BT /F2 10 Tf 1 0 0 1 42 350.7999999999991 Tm (CSS STYLES) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 335.7999999999991 Tm (   1     :root { font-family: Segoe UI, Arial, sans-serif; color: #172033; background: #f3f6fb; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 326.5999999999991 Tm (   2     body { margin: 0; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 317.3999999999991 Tm (   3     header { background: #14243a; color: #fff; padding: 24px max\(20px, calc\(\(100% - 1100px\)/2\)\); }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 308.19999999999914 Tm (   4     header h1 { margin: 0 0 5px; font-size: 1.55rem; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 298.99999999999915 Tm (   5     header p { margin: 0; color: #c4d2e4; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 289.79999999999916 Tm (   6     main { max-width: 1100px; margin: 24px auto; padding: 0 18px 40px; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 280.59999999999917 Tm (   7     .controls { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 271.3999999999992 Tm (   8     select { padding: 9px 12px; border: 1px solid #c9d3e0; border-radius: 8px; background: white; font: ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 262.1999999999992 Tm (     inherit; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 252.9999999999992 Tm (   9     .cards { display: grid; grid-template-columns: repeat\(4, minmax\(130px,1fr\)\); gap: 14px; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 243.79999999999922 Tm (  10     .card, section { background: white; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 3px ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 234.59999999999923 Tm (     12px #15263a0a; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 225.39999999999924 Tm (  11     .card { padding: 16px; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 216.19999999999925 Tm (  12     .card span { display: block; color: #637188; font-size: .88rem; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 206.99999999999926 Tm (  13     .card strong { display: block; margin-top: 5px; font-size: 1.65rem; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 197.79999999999927 Tm (  14     section { margin-top: 18px; padding: 18px; overflow: hidden; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 188.59999999999928 Tm (  15     h2 { margin: 0 0 14px; font-size: 1.1rem; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 179.3999999999993 Tm (  16     .table-wrap { overflow-x: auto; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 170.1999999999993 Tm (  17     table { border-collapse: collapse; width: 100%; min-width: 480px; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 160.99999999999932 Tm (  18     th, td { text-align: left; border-bottom: 1px solid #e8edf3; padding: 11px 9px; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 151.79999999999933 Tm (  19     th { color: #637188; font-size: .82rem; font-weight: 600; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 142.59999999999934 Tm (  20     .present { color: #087443; font-weight: 600; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 133.39999999999935 Tm (  21     .absent { color: #a54136; font-weight: 600; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 124.19999999999935 Tm (  22     .not-observed { color: #9a5b00; font-weight: 600; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 114.99999999999935 Tm (  23     .muted { color: #718096; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 105.79999999999934 Tm (  24     footer { margin-top: 18px; color: #718096; font-size: .82rem; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 96.59999999999934 Tm (  25     @media \(max-width: 700px\) { .cards { grid-template-columns: repeat\(2, 1fr\); } main { margin-top: 16px; }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 87.39999999999934 Tm (      }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 78.19999999999933 Tm (  26   ) Tj ET
+BT /F1 8 Tf 1 0 0 1 42 27 Tm (Source: recognition/attendance_dashboard.py) Tj ET
+BT /F1 8 Tf 1 0 0 1 498 27 Tm (Page 1) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 8198 >>
+stream
+BT /F2 10 Tf 1 0 0 1 42 790 Tm (Smart Attendance - Frontend Code) Tj ET
+BT /F2 10 Tf 1 0 0 1 42 770 Tm (JAVASCRIPT) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 755 Tm (   1     const data = __DATA__;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 745.8 Tm (   2     const select = document.getElementById\('day'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 736.5999999999999 Tm (   3     const dailyBody = document.getElementById\('daily'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 727.3999999999999 Tm (   4     const totalsBody = document.getElementById\('totals'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 718.1999999999998 Tm (   5     const checkpointBody = document.getElementById\('checkpoints'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 708.9999999999998 Tm (   6     const addCell = \(row, value, className = ''\) => {) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 699.7999999999997 Tm (   7       const cell = document.createElement\('td'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 690.5999999999997 Tm (   8       cell.textContent = value;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 681.3999999999996 Tm (   9       if \(className\) cell.className = className;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 672.1999999999996 Tm (  10       row.appendChild\(cell\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 662.9999999999995 Tm (  11     };) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 653.7999999999995 Tm (  12     const checkpoint = data.checkpoints || { session_id: null, rows: [] };) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 644.5999999999995 Tm (  13     const checkpointNote = document.getElementById\('checkpoint-note'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 635.3999999999994 Tm (  14     if \(checkpoint.session_id === null\) {) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 626.1999999999994 Tm (  15       checkpointNote.textContent = 'Checkpoint observations are included when this dashboard uses the ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 616.9999999999993 Tm (     configured MySQL backend.';) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 607.7999999999993 Tm (  16     } else if \(checkpoint.rows.length === 0\) {) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 598.5999999999992 Tm (  17       checkpointNote.textContent = `Session ${checkpoint.session_id} has not completed a checkpoint window ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 589.3999999999992 Tm (     yet.`;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 580.1999999999991 Tm (  18     } else {) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 570.9999999999991 Tm (  19       checkpointNote.textContent = `Session ${checkpoint.session_id}. Not observed means the person was not ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 561.799999999999 Tm (     recognized during that window; it is not an absence decision.`;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 552.599999999999 Tm (  20       for \(const item of checkpoint.rows\) {) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 543.399999999999 Tm (  21         const row = document.createElement\('tr'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 534.1999999999989 Tm (  22         const observation = item.observation_status === 'not_observed' ? 'Not observed ∑ review required' : ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 524.9999999999989 Tm (     'Observed';) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 515.7999999999988 Tm (  23         addCell\(row, item.student_id\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 506.59999999999883 Tm (  24         addCell\(row, `${item.window_start_at} -> ${item.checkpoint_at}`\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 497.39999999999884 Tm (  25         addCell\(row, observation, item.observation_status === 'not_observed' ? 'not-observed' : 'present'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 488.19999999999885 Tm (  26         addCell\(row, item.review_status.replaceAll\('_', ' '\)\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 478.99999999999886 Tm (  27         checkpointBody.appendChild\(row\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 469.7999999999989 Tm (  28       }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 460.5999999999989 Tm (  29     }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 451.3999999999989 Tm (  30     const option = document.createElement\('option'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 442.1999999999989 Tm (  31     option.value = 'all'; option.textContent = 'All dates'; select.appendChild\(option\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 432.9999999999989 Tm (  32     for \(const day of data.dates\) {) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 423.79999999999893 Tm (  33       const item = document.createElement\('option'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 414.59999999999894 Tm (  34       item.value = day; item.textContent = day; select.appendChild\(item\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 405.39999999999895 Tm (  35     }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 396.19999999999897 Tm (  36     const render = \(\) => {) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 386.999999999999 Tm (  37       const day = select.value;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 377.799999999999 Tm (  38       const presentIds = day === 'all' ? new Set\(\) : new Set\(Object.keys\(data.attendance[day] || {}\)\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 368.599999999999 Tm (  39       const present = day === 'all' ? null : presentIds.size;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 359.399999999999 Tm (  40       document.getElementById\('present'\).textContent = day === 'all' ? '-' : present;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 350.199999999999 Tm (  41       document.getElementById\('absent'\).textContent = day === 'all' ? '-' : data.roster.length - present;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 340.99999999999903 Tm (  42       document.getElementById\('roster'\).textContent = data.roster.length;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 331.79999999999905 Tm (  43       document.getElementById\('rate'\).textContent = day === 'all' ? '-' : `${data.roster.length ? ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 322.59999999999906 Tm (     Math.round\(100 * present / data.roster.length\) : 0}%`;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 313.39999999999907 Tm (  44       document.getElementById\('daily-heading'\).textContent = day === 'all' ? 'Select a date for daily ) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 304.1999999999991 Tm (     attendance' : `Daily attendance ∑ ${day}`;) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 294.9999999999991 Tm (  45       dailyBody.replaceChildren\(\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 285.7999999999991 Tm (  46       if \(day !== 'all'\) for \(const id of data.roster\) {) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 276.5999999999991 Tm (  47         const row = document.createElement\('tr'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 267.3999999999991 Tm (  48         const time = data.attendance[day]?.[id] || '';) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 258.19999999999914 Tm (  49         addCell\(row, id\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 248.99999999999915 Tm (  50         addCell\(row, time ? 'Present' : 'Absent', time ? 'present' : 'absent'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 239.79999999999916 Tm (  51         addCell\(row, time || '-', time ? '' : 'muted'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 230.59999999999917 Tm (  52         dailyBody.appendChild\(row\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 221.39999999999918 Tm (  53       }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 212.1999999999992 Tm (  54       totalsBody.replaceChildren\(\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 202.9999999999992 Tm (  55       for \(const id of data.roster\) {) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 193.79999999999922 Tm (  56         const days = data.dates.filter\(date => data.attendance[date]?.[id]\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 184.59999999999923 Tm (  57         const row = document.createElement\('tr'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 175.39999999999924 Tm (  58         addCell\(row, id\); addCell\(row, String\(days.length\)\); addCell\(row, days.join\(', '\) || '-'\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 166.19999999999925 Tm (  59         totalsBody.appendChild\(row\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 156.99999999999926 Tm (  60       }) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 147.79999999999927 Tm (  61     };) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 138.59999999999928 Tm (  62     select.addEventListener\('change', render\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 129.3999999999993 Tm (  63     select.value = data.dates[0] || 'all';) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 120.19999999999929 Tm (  64     render\(\);) Tj ET
+BT /F1 7.2 Tf 1 0 0 1 42 110.99999999999929 Tm (  65   ) Tj ET
+BT /F1 8 Tf 1 0 0 1 42 27 Tm (Source: recognition/attendance_dashboard.py) Tj ET
+BT /F1 8 Tf 1 0 0 1 498 27 Tm (Page 2) Tj ET
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000127 00000 n 
+0000000222 00000 n 
+0000000324 00000 n 
+0000000460 00000 n 
+0000008658 00000 n 
+0000008794 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+17044
+%%EOF
